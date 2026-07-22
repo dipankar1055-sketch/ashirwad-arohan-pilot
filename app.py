@@ -10,7 +10,10 @@ st.set_page_config(
 
 def main():
     # Sidebar Navigation
-    st.sidebar.image("assets/arohan_logo.png", width=150)
+try:
+    st.sidebar.image("assets/aroihan logo.jpg", width=150)
+except:
+    st.sidebar.markdown("🌺 **AROHAN**")
     st.sidebar.markdown("## 🌺 Ashirwad")
     st.sidebar.caption("Organizer's Assistant")
     st.sidebar.divider()
