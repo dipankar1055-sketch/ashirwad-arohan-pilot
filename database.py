@@ -7,12 +7,13 @@ import os
 DB_PATH = "data/ashirwad_arohan.db"
 
 def get_connection():
-    """Get database connection"""
+    """Get database connection — auto-creates folder and database"""
     os.makedirs("data", exist_ok=True)
-    return sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH)
+    return conn
 
 def init_db():
-    """Initialize database tables"""
+    """Initialize database tables — creates all tables if they don't exist"""
     conn = get_connection()
     cursor = conn.cursor()
     
@@ -75,7 +76,7 @@ def init_db():
 def import_members_from_excel(excel_path):
     """Import members from Excel file"""
     if not os.path.exists(excel_path):
-        return False
+        return 0
     
     df = pd.read_excel(excel_path, sheet_name="Aarohan Durga Puja 2026")
     conn = get_connection()
@@ -161,33 +162,42 @@ def add_member(data):
     return membership_id
 
 def get_all_members():
-    conn = get_connection()
-    df = pd.read_sql_query("SELECT * FROM members ORDER BY id", conn)
-    conn.close()
-    return df
+    try:
+        conn = get_connection()
+        df = pd.read_sql_query("SELECT * FROM members ORDER BY id", conn)
+        conn.close()
+        return df
+    except Exception as e:
+        return pd.DataFrame()
 
 def get_dashboard_stats():
-    conn = get_connection()
-    cursor = conn.cursor()
-    
-    stats = {}
-    cursor.execute("SELECT COUNT(*) FROM members")
-    stats['total_members'] = cursor.fetchone()[0] or 0
-    
-    cursor.execute("SELECT COUNT(*) FROM members WHERE DATE(created_at) = DATE('now')")
-    stats['today_registrations'] = cursor.fetchone()[0] or 0
-    
-    cursor.execute("SELECT SUM(amount) FROM members WHERE payment_status = 'Payment Made'")
-    stats['total_membership_fees'] = cursor.fetchone()[0] or 0
-    
-    cursor.execute("SELECT SUM(donation_amount) FROM members")
-    stats['total_donations'] = cursor.fetchone()[0] or 0
-    
-    cursor.execute("SELECT COUNT(*) FROM members WHERE payment_status = 'Pending'")
-    stats['pending_payments'] = cursor.fetchone()[0] or 0
-    
-    cursor.execute("SELECT COUNT(*) FROM members WHERE membership_type LIKE '%Existing%' AND payment_status = 'Pending'")
-    stats['renewals_due'] = cursor.fetchone()[0] or 0
-    
-    conn.close()
-    return stats
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        stats = {}
+        cursor.execute("SELECT COUNT(*) FROM members")
+        stats['total_members'] = cursor.fetchone()[0] or 0
+        cursor.execute("SELECT COUNT(*) FROM members WHERE DATE(created_at) = DATE('now')")
+        stats['today_registrations'] = cursor.fetchone()[0] or 0
+        cursor.execute("SELECT SUM(amount) FROM members WHERE payment_status = 'Payment Made'")
+        stats['total_membership_fees'] = cursor.fetchone()[0] or 0
+        cursor.execute("SELECT SUM(donation_amount) FROM members")
+        stats['total_donations'] = cursor.fetchone()[0] or 0
+        cursor.execute("SELECT COUNT(*) FROM members WHERE payment_status = 'Pending'")
+        stats['pending_payments'] = cursor.fetchone()[0] or 0
+        cursor.execute("SELECT COUNT(*) FROM members WHERE membership_type LIKE '%Existing%' AND payment_status = 'Pending'")
+        stats['renewals_due'] = cursor.fetchone()[0] or 0
+        conn.close()
+        return stats
+    except Exception as e:
+        return {
+            'total_members': 0,
+            'today_registrations': 0,
+            'total_membership_fees': 0,
+            'total_donations': 0,
+            'pending_payments': 0,
+            'renewals_due': 0
+        }
+
+# Auto-initialize database when this module is imported
+init_db()
