@@ -198,6 +198,15 @@ def get_dashboard_stats():
             'pending_payments': 0,
             'renewals_due': 0
         }
-
 # Auto-initialize database when this module is imported
 init_db()
+
+# Auto-import members from Excel if file exists
+try:
+    excel_path = "data/Aarohan_Membership_2026.xlsx"
+    if os.path.exists(excel_path):
+        count = import_members_from_excel(excel_path)
+        if count > 0:
+            print(f"✅ Successfully imported {count} members from Excel")
+except Exception as e:
+    print(f"⚠️ Excel import skipped: {e}")
